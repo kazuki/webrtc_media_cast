@@ -1,0 +1,6 @@
+[submodule "libopus.js"]
+	path = libopus.js
+	url = https://github.com/kazuki/opus.js-sample.git
+[submodule "webrtc_alm"]
+	path = webrtc_alm
+	url = https://github.com/kazuki/webrtc_alm.git
