@@ -1,0 +1,5 @@
+body { font-size: small; }
+
+#live-start-form label, #live-start-form input { display:block; }
+#live-start-form input.text { margin-bottom:12px; width:95%; padding: .4em; }
+#live-start-form fieldset { padding:0; border:0; margin-top: 1em; }
