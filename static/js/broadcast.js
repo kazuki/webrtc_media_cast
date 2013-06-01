@@ -28,16 +28,13 @@ $(function() {
             player_file_pos_ = 0;
             player_.read(player_file_pos_, webAudioBufSize_ * opus_channels_ * 2);
         });
-        console.log("player::open. " + filelist_[player_cur_idx_].name);
+        $('#ctrl-text').text('playing: ' + filelist_[player_cur_idx_].name);
         player_.onloadend = function(ev) {
             if (ev.target.readyState == FileReader.DONE) {
-                //console.log("player::onloadend");
                 if (ev.target.result.byteLength == 0) {
-                    player_file_pos_ = 0; // 無限リピート
-                    player_.read(player_file_pos_, webAudioBufSize_ * opus_channels_ * 2);
+                    player_file_idx_ += 1;
+                    if (player_file_idx_ >= filelist_.length) player_file_idx_ = 0;
                     return;
-                    //console.log("EOF");
-                    //return;
                 }
                 player_buffer_.set(new Int16Array(ev.target.result), player_buffer_filled_);
                 player_buffer_filled_ += ev.target.result.byteLength / 2;
@@ -59,8 +56,11 @@ $(function() {
         icons: {primary: 'ui-icon-seek-first'},
         text: false
     }).click(function() {
-        if (player_file_idx_ > 0)
+        if (player_file_idx_ > 0) {
             player_file_idx_ -= 1;
+        } else {
+            player_file_idx_ = filelist_.length - 1;
+        }
     });
     $('#ctrl-play').button({
         icons: {primary: 'ui-icon-play'},
@@ -74,20 +74,23 @@ $(function() {
         text: false
     }).click(function() {
         player_status_ = 0;
-    });
+    }).remove();
     $('#ctrl-stop').button({
         icons: {primary: 'ui-icon-stop'},
         text: false
     }).click(function() {
         player_status_ = 0;
         player_file_pos_ = 0;
-    });
+    }).remove();
     $('#ctrl-next').button({
         icons: {primary: 'ui-icon-seek-end'},
         text: false
     }).click(function() {
-        if (player_file_idx_ + 1 < filelist_.length)
+        if (player_file_idx_ + 1 < filelist_.length) {
             player_file_idx_ += 1;
+        } else {
+            player_file_idx_ = 0;
+        }
     });
 
     $('#live-start-form').dialog({
