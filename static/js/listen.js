@@ -22,6 +22,27 @@ $(function() {
                 return;
             }
         };
+        alm_.onstatechange = function(arg) {
+            var info = alm_.getConnectionInfo();
+            var str = '';
+            if (info.up.length > 0) {
+                str = "upstreams (" + info.up.length + "/" + alm_.maxUpStreams + "):";
+                info.up.forEach(function(x,idx,ary) {
+                    str += "\n    id=" + x.id + ": " + (x.connected ? "connected" : "connecting");
+                });
+            }
+            if (info.down.length > 0) {
+                if (str.length > 0) str += "\n";
+                str += "downstreams (" + info.down.length + "/" + alm_.maxDownStreams + "):";
+                info.down.forEach(function(x,idx,ary) {
+                    str += "\n    id=" + x.id + ": " + (x.connected ? "connected" : "connecting");
+                });
+            }
+            $("#connstat").text(str);
+        };
+        window.setInterval(function() {
+            alm_.timer(alm_);
+        }, 1000);
 
         var ringBufSamples = opus_sampling_rate_ * ringBufferSizeInSec_;
         if (ringBufSamples % opus_frame_size_ !== 0) ringBufSamples -= ringBufSamples % opus_frame_size_;

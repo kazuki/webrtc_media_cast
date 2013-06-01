@@ -124,6 +124,39 @@ $(function() {
                         }}
                     ]);
                 });
+                alm_.onstatechange = function(arg) {
+                    var info = alm_.getConnectionInfo();
+                    var str = '';
+                    if (info.down.length > 0) {
+                        str += "downstreams (" + info.down.length + "/" + alm_.maxDownStreams + "):";
+                        info.down.forEach(function(x,idx,ary) {
+                            str += "\n    id=" + x.id + ": " + (x.connected ? "connected" : "connecting");
+                        });
+                    }
+                    $("#connstat").text(str);
+                };
+                alm_.ontreeupdate = function(map) {
+                    var graph = [];
+                    var now = new Date();
+                    for (var key in map) {
+                        var entry = map[key];
+                        var list = [];
+                        if ((now.getTime() - entry.date.getTime()) / 1000 > alm_.timeout)
+                            continue; // TODO: ALM側で対応すべき
+                        for (var i = 0; i < entry.upstreams.length; i ++)
+                            list.push(entry.upstreams[i] + "");
+                        graph.push({
+                            "id": entry.id + "",
+                            "name": entry.id + "",
+                            "adjacencies": list
+                        });
+                    }
+                    graph.unshift({"id":"0","name":"root","adjacencies":[]});
+                    drawTreeGraph(graph);
+                };
+                window.setInterval(function() {
+                    alm_.timer(alm_);
+                }, 1000);
 
                 encoder_ = new Worker("js/libopus.worker.js");
                 encoder_.onmessage = function(ev) {
@@ -203,4 +236,59 @@ $(function() {
             $('#live-start-form').parent().find('button.ui-dialog-titlebar-close').remove();
         }
     });
+    $('#showGraph').click(function() {
+        $('#treeGraph').dialog('option', 'resizeStop').call($('#treeGraph'));
+        $('#treeGraph').dialog('open');
+    });
+    $('#treeGraph').dialog({
+        autoOpen: false,
+        resizeStop: function(ev, ui) {
+            if (rgraph)
+                rgraph.canvas.resize($('#treeGraph').width(), $('#treeGraph').height());
+        }
+    });
+
+    var rgraph = null;
+    function drawTreeGraph(json) {
+        if (!rgraph) {
+            rgraph = new $jit.RGraph({
+                injectInto: 'treeGraph',
+                background: {
+                    CanvasStyles: {
+                        strokeStyle: '#555'
+                    }
+                },
+                Canvas: {
+                    width: 'auto',
+                    height: 'auto'
+                },
+                Navigation: {
+                    enable: true,
+                    panning: true,
+                    zooming: 10
+                },
+                Node: {
+                    color: '#000'
+                },
+                Edge: {
+                    color: '#888',
+                    lineWidth:1.5
+                },
+                onCreateLabel: function(domElement, node){
+                    domElement.innerHTML = node.name;
+                },
+                onPlaceLabel: function(domElement, node){
+                    var style = domElement.style;
+                    style.display = '';
+                    style.fontSize = "1ex";
+                    style.color = "#000";
+                    var left = parseInt(style.left);
+                    var w = domElement.offsetWidth;
+                    style.left = (left - w / 2) + 'px';
+                }
+            });
+        }
+        rgraph.loadJSON(json);
+        rgraph.refresh();
+    }
 });

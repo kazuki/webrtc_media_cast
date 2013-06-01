@@ -40,3 +40,8 @@ body { font-size: small; }
     margin: 0 1ex 0 0;
     font-size: 80%;
 }
+
+h1 { font-size: large; border-bottom: 2px solid black; }
+h2 { font-size: medium; border-bottom: 1px solid black; }
+
+#connstat { white-space:pre }

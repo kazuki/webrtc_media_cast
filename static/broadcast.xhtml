@@ -13,6 +13,7 @@
     <script type="text/javascript" src="js/riffwavereader.js" />
     <script type="text/javascript" src="js/alm.js" />
     <script type="text/javascript" src="js/common.js" />
+    <script type="text/javascript" src="js/jit-yc.js" />
     <script type="text/javascript" src="js/broadcast.js" />
   </head>
   <body>
@@ -44,6 +45,10 @@
         </div>
         <div style="clear:both" />
       </div>
+
+      <h2>PeerConnection接続状況</h2>
+      <div id="connstat" />
+      <button id="showGraph">マルチキャストツリーの表示</button>
     </div>
 
     <div id="live-start-form" title="Create New Broadcast">
@@ -60,5 +65,7 @@
       <p />
       <div id="live-start-progress-bar" />
     </div>
+
+    <div id="treeGraph" title="Multicast Tree (Radial Graph View)" />
   </body>
 </html>
