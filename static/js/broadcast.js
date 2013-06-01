@@ -31,7 +31,7 @@ $(function() {
         console.log("player::open. " + filelist_[player_cur_idx_].name);
         player_.onloadend = function(ev) {
             if (ev.target.readyState == FileReader.DONE) {
-                console.log("player::onloadend");
+                //console.log("player::onloadend");
                 if (ev.target.result.byteLength == 0) {
                     player_file_pos_ = 0; // 無限リピート
                     player_.read(player_file_pos_, webAudioBufSize_ * opus_channels_ * 2);
@@ -124,10 +124,9 @@ $(function() {
 
                 encoder_ = new Worker("js/libopus.worker.js");
                 encoder_.onmessage = function(ev) {
-                    console.log('encoder::onmessage. ' + ev.data);
                     if (ev.data instanceof ArrayBuffer) {
-                        if (alm_) alm_.multicast(ev.data);
-                        console.log(ev.data.byteLength);
+                        if (!alm_) return;
+                        alm_.multicast(ev.data);
                     }
                 };
                 encoder_.postMessage({'samplingrate': opus_sampling_rate_,
@@ -148,7 +147,6 @@ $(function() {
                 proc_node.connect(audioctx_.destination);
                 proc_node.onaudioprocess = function(ev) {
                     if (player_status_ !== 1) return;
-                    console.log("audioctx::onaudioprocess");
                     check_player_file();
                     if (player_buffer_filled_ > 0) {
                         var outCh0 = ev.outputBuffer.getChannelData(0);
@@ -171,7 +169,7 @@ $(function() {
                             pbidx += size / 2;
                         }
                         while (pbidx + opus_in_frame_bytes / 2 <= player_buffer_filled_) {
-                            encoder_.postMessage(player_buffer_.buffer.slice(pbidx * 2, opus_in_frame_bytes));
+                            encoder_.postMessage(player_buffer_.buffer.slice(pbidx * 2, pbidx * 2 + opus_in_frame_bytes));
                             pbidx += opus_in_frame_bytes / 2;
                         }
                         if (pbidx < player_buffer_filled_) {
@@ -182,7 +180,6 @@ $(function() {
 
                         player_buffer_filled_ = 0;
                         player_.read(player_file_pos_, webAudioBufSize_ * opus_channels_ * 2);
-                        console.log("audioctx::filled");
                     }
                 };
             }

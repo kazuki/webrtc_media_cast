@@ -4,7 +4,7 @@ $(function() {
     var webAudioBufSize_ = 8192;
     var decoder_ = null;
     var ringBufferSizeInSec_ = 10;
-    var ringBuffer_ = null;
+    var ringBuffers_ = [];
     var ringReadPos_ = 0, ringWritePos_ = 0;
 
     var play = function(id) {
@@ -25,28 +25,35 @@ $(function() {
 
         var ringBufSamples = opus_sampling_rate_ * ringBufferSizeInSec_;
         if (ringBufSamples % opus_frame_size_ !== 0) ringBufSamples -= ringBufSamples % opus_frame_size_;
-        ringBuffer_ = new Float32Array(new ArrayBuffer(ringBufSamples * opus_channels_ * 4));
+        for (var i = 0; i < opus_channels_; i++)
+            ringBuffers_.push(new Float32Array(ringBufSamples * 4));
 
         decoder_ = new Worker("js/libopus.worker.js");
         decoder_.postMessage({'samplingrate': opus_sampling_rate_,
                               'channels': opus_channels_,
                               'float': true,
+                              'deinterleave': true,
                               'type': 'decoder'});
         decoder_.onmessage = function(ev) {
             if (ev.data instanceof ArrayBuffer) {
                 var f32ary = new Float32Array(ev.data);
-                var modPos = ringWritePos_ % ringBuffer_.length;
-                if (modPos + f32ary.length < ringBuffer_.length) {
-                    ringBuffer_.set(f32ary, modPos);
+                var samples_per_ch = f32ary.length / opus_channels_;
+                var modPos = ringWritePos_ % ringBuffers_[0].length;
+                if (modPos + samples_per_ch < ringBuffers_[0].length) {
+                    for (var i = 0; i < opus_channels_; i ++)
+                        ringBuffers_[i].set(f32ary.subarray(i * samples_per_ch, (i + 1) * samples_per_ch), modPos);
                 } else {
-                    var tailSize = (ringBuffer_.length - modPos) * 4;
-                    ringBuffer_.set(new Float32Array(ev.data.slice(0, tailSize)), modPos);
-                    ringBuffer_.set(new Float32Array(ev.data.slice(tailSize)), 0);
+                    var tailSize = (ringBuffers_[0].length - modPos);
+                    for (var i = 0; i < opus_channels_; i ++) {
+                        ringBuffers_[i].set(f32ary.subarray(i * samples_per_ch, i * samples_per_ch + tailSize), modPos);
+                        ringBuffers_[i].set(f32ary.subarray(i * samples_per_ch + tailSize), 0);
+                    }
                 }
-                ringWritePos_ += f32ary.length;
-                if (ringWritePos_ - ringReadPos_ > ringBuffer_.length)
-                    ringReadPos_ = ringWritePos_ - ringBuffer_.length;
-                //console.log('decoded: ' + ev.data.byteLength + ' bytes');
+                ringWritePos_ += samples_per_ch;
+
+                // TODO: 再生よりもデータ受信が早かった場合を考慮
+                //if (ringWritePos_ - ringReadPos_ > ringBuffer_.length)
+                //    ringReadPos_ = ringWritePos_ - ringBuffer_.length;
             }
         };
 
@@ -63,8 +70,8 @@ $(function() {
         dummy_node.connect(proc_node);
         proc_node.connect(audioctx_.destination);
         proc_node.onaudioprocess = function(ev) {
-            if (ringReadPos_ === 0 && ringWritePos_ < opus_sampling_rate_ * opus_channels_ * 5) {
-                console.log('onaudioprocess. t=' + ev.playbackTime + ': buffering...  size=' + (ringWritePos_ - ringReadPos_) + '/' + ringBuffer_.length);
+            if (ringReadPos_ === 0 && ringWritePos_ < opus_sampling_rate_ * opus_channels_) {
+                console.log('onaudioprocess. t=' + ev.playbackTime + ': buffering...  size=' + (ringWritePos_ - ringReadPos_) + '/' + ringBuffers_[0].length);
                 return;
             }
             if (ringReadPos_ >= ringWritePos_) {
@@ -72,25 +79,23 @@ $(function() {
                 return;
             }
 
-            var outCh0 = ev.outputBuffer.getChannelData(0);
-            var outCh1 = ev.outputBuffer.getChannelData(1);
-            var samples = (ringWritePos_ - ringReadPos_ < outCh0.length * 2 ? ringWritePos_ - ringReadPos_ : outCh0.length * 2);
-            var modReadPos = ringReadPos_ % ringBuffer_.length;
-            var modEnd = (ringReadPos_ + samples) % ringBuffer_.length;
-            var i = 0;
+            var outs = [];
+            for (var i = 0; i < opus_channels_; i ++)
+                outs.push(ev.outputBuffer.getChannelData(i));
+            var samples = (ringWritePos_ - ringReadPos_ < outs[0].length ? ringWritePos_ - ringReadPos_ : outs[0].length);
+            var modReadPos = ringReadPos_ % ringBuffers_[0].length;
+            var modEnd = (ringReadPos_ + samples) % ringBuffers_[0].length;
+            var idx = 0;
             if (modReadPos > modEnd) {
-                for (var j = modReadPos; j < ringBuffer_.length; j += 2, i ++) {
-                    outCh0[i] = ringBuffer_[j];
-                    outCh1[i] = ringBuffer_[j + 1];
-                }
+                for (var i = 0; i < opus_channels_; i ++)
+                    outs[i].set(ringBuffers_[i].subarray(modReadPos), 0);
+                idx += ringBuffers_[0].length - modReadPos;
                 modReadPos = 0;
             }
-            for (var j = modReadPos; i < modEnd; j += 2, i ++) {
-                outCh0[i] = ringBuffer_[j];
-                outCh1[i] = ringBuffer_[j + 1];
-            }
+            for (var i = 0; i < opus_channels_; i ++)
+                outs[i].set(ringBuffers_[i].subarray(modReadPos, modEnd), idx);
+            idx += (modEnd - modReadPos);
             ringReadPos_ += samples;
-            console.log('onaudioprocess. t=' + ev.playbackTime + ", samples=" + samples + ", ringbuf=" + (ringWritePos_ - ringReadPos_));
         };
         dummy_node.start(0);
     };
