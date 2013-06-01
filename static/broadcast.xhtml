@@ -10,10 +10,42 @@
     <script type="text/javascript" src="js/bitarray.js" />
     <script type="text/javascript" src="js/bigint.js" />
     <script type="text/javascript" src="js/peerconnection.js" />
+    <script type="text/javascript" src="js/riffwavereader.js" />
     <script type="text/javascript" src="js/alm.js" />
+    <script type="text/javascript" src="js/common.js" />
     <script type="text/javascript" src="js/broadcast.js" />
   </head>
   <body>
+    <h1>
+      <span>Broadcasting Page</span>
+      <span style="font-size: small; font-weight: normal">RIFF PCM Wave (48kHz 2ch) の配信</span>
+    </h1>
+    <div>
+      <div></div>
+      <div id="ctrl-pane">
+        <div id="ctrl-text">idle</div>
+        <div id="ctrl-buttons">
+          <button id="ctrl-prev">&lt;&lt;</button>
+          <button id="ctrl-play">play</button>
+          <button id="ctrl-pause">pause</button>
+          <button id="ctrl-stop">stop</button>
+          <button id="ctrl-next">&gt;&gt;</button>
+        </div>
+      </div>
+      <h2>配信するファイル</h2>
+      <div>
+        <select id="file-list" size="10" style="float:left;margin-right:1em" />
+        <div>
+          <h3>ファイルを追加</h3>
+          <div>
+            <button id="addFileList">追加</button>
+            <input type="file" id="fileForm" multiple="multiple" />
+          </div>
+        </div>
+        <div style="clear:both" />
+      </div>
+    </div>
+
     <div id="live-start-form" title="Create New Broadcast">
       <form>
         <fieldset>

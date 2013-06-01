@@ -108,7 +108,7 @@ class MediaCastWebSocket(tornado.websocket.WebSocketHandler):
             groupInfo = inproc_state.sockMap[self]
             print("GroupOwner WebSocket closed")
             del inproc_state.sockMap[self]
-            del inproc_state.groups[groupInfo.name]
+            del inproc_state.groups[groupInfo.group_id]
 
 class MediaCastAPI(tornado.web.RequestHandler):
     def get(self, method):
