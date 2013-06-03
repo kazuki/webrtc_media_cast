@@ -228,7 +228,7 @@ $(function() {
                         }
                         if (pbidx < player_buffer_filled_) {
                             var eview = new Int16Array(encoder_buffer_);
-                            eview.set(player_buffer_.subarray(pbidx));
+                            eview.set(player_buffer_.subarray(pbidx, player_buffer_filled_));
                             encoder_buffer_filled_ = player_buffer_filled_ - pbidx;
                         }
 
