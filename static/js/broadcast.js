@@ -33,7 +33,12 @@ $(function() {
             if (ev.target.readyState == FileReader.DONE) {
                 if (ev.target.result.byteLength == 0) {
                     player_file_idx_ += 1;
-                    if (player_file_idx_ >= filelist_.length) player_file_idx_ = 0;
+                    if (player_file_idx_ >= filelist_.length) {
+                        player_file_idx_ = 0;
+                        player_cur_idx_ = -1;
+                    }
+                    if (filelist_.length > 0)
+                        check_player_file();
                     return;
                 }
                 player_buffer_.set(new Int16Array(ev.target.result), player_buffer_filled_);
