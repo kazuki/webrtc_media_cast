@@ -13,4 +13,4 @@
 
 ## System Diagram
 
-![System diagram](https://gist.github.com/kazuki/5689906/raw/mediacast.svg)
+![System diagram](https://yabumi.cc/14eb152568e24dae4a63f74d.svg)
